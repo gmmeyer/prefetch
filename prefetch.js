@@ -33,7 +33,7 @@
         }
       }
       else{
-        injectIframe2(a);
+        injectIframe(a);
       }
     }
 
@@ -56,6 +56,10 @@
 
     self.addExclusions = function(exclusions){
       self.$exclusions = self.$exclusions.concat(exclusions);
+    }
+
+    function getRef(a){
+      return a.getAttribute('pref') || a.href;
     }
 
     function removeHash(url){
@@ -82,14 +86,14 @@
       return false;
     }
 
-    function isSamePage(a){
-      return a.href.indexOf('#') > -1 && removeHash(a.href) === removeHash(location.href);
+    function isSamePage(href){
+      return href.indexOf('#') > -1 && removeHash(href) === removeHash(location.href);
     }
 
-    function isExcluded(a){
+    function isExcluded(href){
       if(self.$exclusions.length){
         for(var i = 0; i < self.$exclusions.length; ++i){
-          if(a.href.indexOf(self.$exclusions[i]) > -1){
+          if(href.indexOf(self.$exclusions[i]) > -1){
             return true;
           }
         }
@@ -98,22 +102,28 @@
     }
 
     function isPrefetchable(a){
-      if(a.hasAttribute('download')
-        || !a.href
+      var href = getRef(a);
+      if(!href
+        || a.hasAttribute('download')
         || isBlacklisted(a)
-        || isSamePage(a)
-        || isExcluded(a)){
+        || isSamePage(href)
+        || isExcluded(href)){
         return false;
       }
       return true;
     }
 
-    function injectIframe2(a){
+    /**
+      This function creates an iframe and injects a prefetch link into it
+      This is necessary because Chrome is the only browser to evaluate dynamically injected prefetch links
+      So to get it working in other browsers, I came up with this hack
+      */
+    function injectIframe(a){
       if(a && isPrefetchable(a)){
-        var url = (typeof a === 'object') ? a.href : a;
+        var url = (typeof a === 'object') ? getRef(a) : a;
         var iframe = document.createElement('iframe');
         iframe.style = 'display:none;';
-        var html = '<head><link rel="prefetch" href="'+url+'"></head>';
+        var html = '<head><link rel="prefetch" href="' + url + '"></head>';
         document.body.appendChild(iframe);
         iframe.contentWindow.document.open();
         iframe.contentWindow.document.write(html);
