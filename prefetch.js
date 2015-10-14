@@ -6,13 +6,17 @@
 
   function Prefetch(){
     var self = this;
+    self.$prefetchOnMousedown = false;
+    self.$enableTouch = false;
+    self.$delayBeforePrefetch = 50;
+    self.$exclusions = [];
 
     self.init = function(config){
       config = config || {};
-      self.$prefetchOnMousedown = config.waitForMousedown || false;
-      self.$enableTouch = config.enableTouch || false;
-      self.$delayBeforePrefetch = config.hoverDelay || 50;
-      self.$exclusions = config.exclusions || [];
+      self.$prefetchOnMousedown = config.waitForMousedown || self.$prefetchOnMousedown;
+      self.$enableTouch = config.enableTouch || self.$enableTouch;
+      self.$delayBeforePrefetch = config.hoverDelay || self.$delayBeforePrefetch;
+      self.$exclusions = config.exclusions || self.$exclusions;
       config.containers = config.containers || [];
       self.addContainers(config.containers);
     }
@@ -25,11 +29,11 @@
       }
       if(Object.prototype.toString.call(a) === '[object Array]'){
         for(var i = 0; i < a.length; ++i){
-          injectPrefetchLink(a[i]);
+          injectIframe(a[i]);
         }
       }
       else{
-        injectPrefetchLink(a);
+        injectIframe2(a);
       }
     }
 
@@ -104,13 +108,16 @@
       return true;
     }
 
-    function injectPrefetchLink(a){
+    function injectIframe2(a){
       if(a && isPrefetchable(a)){
         var url = (typeof a === 'object') ? a.href : a;
-        var link = document.createElement('link');
-        link.setAttribute('rel', 'prefetch');
-        link.setAttribute('href', url);
-        document.getElementsByTagName('head')[0].appendChild(link);
+        var iframe = document.createElement('iframe');
+        iframe.style = 'display:none;';
+        var html = '<head><link rel="prefetch" href="'+url+'"></head>';
+        document.body.appendChild(iframe);
+        iframe.contentWindow.document.open();
+        iframe.contentWindow.document.write(html);
+        iframe.contentWindow.document.close();
         if(typeof a === 'object'){
           a.setAttribute('data-no-prefetch', '');
         }
